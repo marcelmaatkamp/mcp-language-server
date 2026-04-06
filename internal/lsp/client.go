@@ -196,11 +196,8 @@ func (c *Client) InitializeLSPClient(ctx context.Context, workspaceDir string) (
 		return nil, fmt.Errorf("initialize failed: %w", err)
 	}
 
-	if err := c.Notify(ctx, "initialized", struct{}{}); err != nil {
-		return nil, fmt.Errorf("initialized notification failed: %w", err)
-	}
-
-	// Register handlers
+	// Register handlers before sending initialized so the server's
+	// workspace/configuration request (sent right after initialized) is handled.
 	c.RegisterServerRequestHandler("workspace/applyEdit", HandleApplyEdit)
 	c.RegisterServerRequestHandler("workspace/configuration", HandleWorkspaceConfiguration)
 	c.RegisterServerRequestHandler("client/registerCapability", HandleRegisterCapability)
