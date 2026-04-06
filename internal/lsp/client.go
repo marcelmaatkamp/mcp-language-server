@@ -191,13 +191,9 @@ func (c *Client) InitializeLSPClient(ctx context.Context, workspaceDir string) (
 		},
 	}
 
-	var result protocol.InitializeResult
-	if err := c.Call(ctx, "initialize", initParams, &result); err != nil {
-		return nil, fmt.Errorf("initialize failed: %w", err)
-	}
-
-	// Register handlers before sending initialized so the server's
-	// workspace/configuration request (sent right after initialized) is handled.
+	// Register handlers BEFORE sending initialize so any server-initiated
+	// requests (e.g. workspace/configuration) that arrive during or after
+	// the handshake are handled correctly instead of getting "method not found".
 	c.RegisterServerRequestHandler("workspace/applyEdit", HandleApplyEdit)
 	c.RegisterServerRequestHandler("workspace/configuration", HandleWorkspaceConfiguration)
 	c.RegisterServerRequestHandler("client/registerCapability", HandleRegisterCapability)
@@ -205,7 +201,12 @@ func (c *Client) InitializeLSPClient(ctx context.Context, workspaceDir string) (
 	c.RegisterNotificationHandler("textDocument/publishDiagnostics",
 		func(params json.RawMessage) { HandleDiagnostics(c, params) })
 
-	// Notify the LSP server
+	var result protocol.InitializeResult
+	if err := c.Call(ctx, "initialize", initParams, &result); err != nil {
+		return nil, fmt.Errorf("initialize failed: %w", err)
+	}
+
+	// Notify the LSP server that the client is ready
 	err := c.Initialized(ctx, protocol.InitializedParams{})
 	if err != nil {
 		return nil, fmt.Errorf("initialization failed: %w", err)
