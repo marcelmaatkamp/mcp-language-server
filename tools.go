@@ -42,6 +42,9 @@ func (s *mcpServer) registerTools() error {
 	)
 
 	s.mcpServer.AddTool(applyTextEditTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if err := s.waitForLSP(ctx); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("LSP not ready: %v", err)), nil
+		}
 		// Extract arguments
 		filePath, ok := request.Params.Arguments["filePath"].(string)
 		if !ok {
@@ -104,6 +107,9 @@ func (s *mcpServer) registerTools() error {
 	)
 
 	s.mcpServer.AddTool(readDefinitionTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if err := s.waitForLSP(ctx); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("LSP not ready: %v", err)), nil
+		}
 		// Extract arguments
 		symbolName, ok := request.Params.Arguments["symbolName"].(string)
 		if !ok {
@@ -128,6 +134,9 @@ func (s *mcpServer) registerTools() error {
 	)
 
 	s.mcpServer.AddTool(findReferencesTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if err := s.waitForLSP(ctx); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("LSP not ready: %v", err)), nil
+		}
 		// Extract arguments
 		symbolName, ok := request.Params.Arguments["symbolName"].(string)
 		if !ok {
@@ -160,6 +169,9 @@ func (s *mcpServer) registerTools() error {
 	)
 
 	s.mcpServer.AddTool(getDiagnosticsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if err := s.waitForLSP(ctx); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("LSP not ready: %v", err)), nil
+		}
 		// Extract arguments
 		filePath, ok := request.Params.Arguments["filePath"].(string)
 		if !ok {
@@ -267,6 +279,9 @@ func (s *mcpServer) registerTools() error {
 	)
 
 	s.mcpServer.AddTool(hoverTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if err := s.waitForLSP(ctx); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("LSP not ready: %v", err)), nil
+		}
 		// Extract arguments
 		filePath, ok := request.Params.Arguments["filePath"].(string)
 		if !ok {
@@ -323,6 +338,9 @@ func (s *mcpServer) registerTools() error {
 	)
 
 	s.mcpServer.AddTool(renameSymbolTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if err := s.waitForLSP(ctx); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("LSP not ready: %v", err)), nil
+		}
 		// Extract arguments
 		filePath, ok := request.Params.Arguments["filePath"].(string)
 		if !ok {
