@@ -99,10 +99,10 @@ func (s *mcpServer) registerTools() error {
 	})
 
 	readDefinitionTool := mcp.NewTool("definition",
-		mcp.WithDescription("Read the source code definition of a symbol (function, type, constant, etc.) from the codebase. Returns the complete implementation code where the symbol is defined."),
+		mcp.WithDescription("Legacy symbol-name definition lookup. Avoid for Kotlin/Android because it relies on workspace/symbol and loses file-position context; prefer definition_at when filePath, line, and column are available."),
 		mcp.WithString("symbolName",
 			mcp.Required(),
-			mcp.Description("The name of the symbol whose definition you want to find (e.g. 'mypackage.MyFunction', 'MyType.MyMethod')"),
+			mcp.Description("The symbol name to search. For Kotlin/Android, prefer definition_at with filePath, line, and column instead."),
 		),
 	)
 
@@ -126,10 +126,10 @@ func (s *mcpServer) registerTools() error {
 	})
 
 	findReferencesTool := mcp.NewTool("references",
-		mcp.WithDescription("Find all usages and references of a symbol throughout the codebase. Returns a list of all files and locations where the symbol appears."),
+		mcp.WithDescription("Legacy symbol-name reference lookup. Avoid for Kotlin/Android because it relies on workspace/symbol and loses file-position context; prefer references_at when filePath, line, and column are available."),
 		mcp.WithString("symbolName",
 			mcp.Required(),
-			mcp.Description("The name of the symbol to search for (e.g. 'mypackage.MyFunction', 'MyType')"),
+			mcp.Description("The symbol name to search. For Kotlin/Android, prefer references_at with filePath, line, and column instead."),
 		),
 	)
 
@@ -153,7 +153,7 @@ func (s *mcpServer) registerTools() error {
 	})
 
 	definitionAtTool := mcp.NewTool("definition_at",
-		mcp.WithDescription("Read the source code definition of the symbol at the specified file position."),
+		mcp.WithDescription("Preferred definition lookup for Kotlin/Android and other context-sensitive languages. Reads the source definition for the symbol at an exact file position using textDocument/definition."),
 		mcp.WithString("filePath",
 			mcp.Required(),
 			mcp.Description("The path to the file containing the symbol usage"),
@@ -207,7 +207,7 @@ func (s *mcpServer) registerTools() error {
 	})
 
 	referencesAtTool := mcp.NewTool("references_at",
-		mcp.WithDescription("Find usages and references for the symbol at the specified file position."),
+		mcp.WithDescription("Preferred reference lookup for Kotlin/Android and other context-sensitive languages. Finds usages for the symbol at an exact file position using textDocument/references."),
 		mcp.WithString("filePath",
 			mcp.Required(),
 			mcp.Description("The path to the file containing the symbol usage"),
