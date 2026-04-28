@@ -152,6 +152,134 @@ func (s *mcpServer) registerTools() error {
 		return mcp.NewToolResultText(text), nil
 	})
 
+	definitionAtTool := mcp.NewTool("definition_at",
+		mcp.WithDescription("Read the source code definition of the symbol at the specified file position."),
+		mcp.WithString("filePath",
+			mcp.Required(),
+			mcp.Description("The path to the file containing the symbol usage"),
+		),
+		mcp.WithNumber("line",
+			mcp.Required(),
+			mcp.Description("The line number where the symbol is located (1-indexed)"),
+		),
+		mcp.WithNumber("column",
+			mcp.Required(),
+			mcp.Description("The column number where the symbol is located (1-indexed)"),
+		),
+	)
+
+	s.mcpServer.AddTool(definitionAtTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if err := s.waitForLSP(ctx); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("LSP not ready: %v", err)), nil
+		}
+
+		filePath, ok := request.Params.Arguments["filePath"].(string)
+		if !ok {
+			return mcp.NewToolResultError("filePath must be a string"), nil
+		}
+
+		var line, column int
+		switch v := request.Params.Arguments["line"].(type) {
+		case float64:
+			line = int(v)
+		case int:
+			line = v
+		default:
+			return mcp.NewToolResultError("line must be a number"), nil
+		}
+
+		switch v := request.Params.Arguments["column"].(type) {
+		case float64:
+			column = int(v)
+		case int:
+			column = v
+		default:
+			return mcp.NewToolResultError("column must be a number"), nil
+		}
+
+		coreLogger.Debug("Executing definition_at for file: %s line: %d column: %d", filePath, line, column)
+		text, err := tools.ReadDefinitionAt(s.ctx, s.lspClient, filePath, line, column)
+		if err != nil {
+			coreLogger.Error("Failed to get definition at position: %v", err)
+			return mcp.NewToolResultError(fmt.Sprintf("failed to get definition at position: %v", err)), nil
+		}
+		return mcp.NewToolResultText(text), nil
+	})
+
+	referencesAtTool := mcp.NewTool("references_at",
+		mcp.WithDescription("Find usages and references for the symbol at the specified file position."),
+		mcp.WithString("filePath",
+			mcp.Required(),
+			mcp.Description("The path to the file containing the symbol usage"),
+		),
+		mcp.WithNumber("line",
+			mcp.Required(),
+			mcp.Description("The line number where the symbol is located (1-indexed)"),
+		),
+		mcp.WithNumber("column",
+			mcp.Required(),
+			mcp.Description("The column number where the symbol is located (1-indexed)"),
+		),
+		mcp.WithBoolean("includeDeclaration",
+			mcp.Description("Whether to include the symbol declaration in references"),
+			mcp.DefaultBool(false),
+		),
+		mcp.WithNumber("contextLines",
+			mcp.Description("Lines of context around each reference"),
+		),
+	)
+
+	s.mcpServer.AddTool(referencesAtTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if err := s.waitForLSP(ctx); err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("LSP not ready: %v", err)), nil
+		}
+
+		filePath, ok := request.Params.Arguments["filePath"].(string)
+		if !ok {
+			return mcp.NewToolResultError("filePath must be a string"), nil
+		}
+
+		var line, column int
+		switch v := request.Params.Arguments["line"].(type) {
+		case float64:
+			line = int(v)
+		case int:
+			line = v
+		default:
+			return mcp.NewToolResultError("line must be a number"), nil
+		}
+
+		switch v := request.Params.Arguments["column"].(type) {
+		case float64:
+			column = int(v)
+		case int:
+			column = v
+		default:
+			return mcp.NewToolResultError("column must be a number"), nil
+		}
+
+		includeDeclaration := false
+		if includeDeclarationArg, ok := request.Params.Arguments["includeDeclaration"].(bool); ok {
+			includeDeclaration = includeDeclarationArg
+		}
+
+		contextLines := 5
+		switch v := request.Params.Arguments["contextLines"].(type) {
+		case float64:
+			contextLines = int(v)
+		case int:
+			contextLines = v
+		}
+
+		coreLogger.Debug("Executing references_at for file: %s line: %d column: %d", filePath, line, column)
+		text, err := tools.FindReferencesAt(s.ctx, s.lspClient, filePath, line, column, includeDeclaration, contextLines)
+		if err != nil {
+			coreLogger.Error("Failed to find references at position: %v", err)
+			return mcp.NewToolResultError(fmt.Sprintf("failed to find references at position: %v", err)), nil
+		}
+		return mcp.NewToolResultText(text), nil
+	})
+
 	getDiagnosticsTool := mcp.NewTool("diagnostics",
 		mcp.WithDescription("Get diagnostic information for a specific file from the language server."),
 		mcp.WithString("filePath",
